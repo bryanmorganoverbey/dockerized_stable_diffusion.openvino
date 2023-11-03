@@ -6,7 +6,7 @@ WORKDIR /.
 # Copy the current directory contents into the container at /.
 COPY . /.
 
-RUN pip install "openvino-dev[onnx,pytorch]==2022.3.0"
+RUN pip install --no-cache-dir "openvino-dev[onnx,pytorch]==2022.3.0"
 
 # Run the command to install any necessary dependencies
 RUN pip install --no-cache-dir -r requirements.txt
