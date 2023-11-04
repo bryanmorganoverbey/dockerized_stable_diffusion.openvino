@@ -1,101 +1,55 @@
-# stable_diffusion.openvino
+# Dockerized Stable Diffusion OpenVino
 
-Implementation of Text-To-Image generation using Stable Diffusion on Intel CPU or GPU.
-<p align="center">
-  <img src="data/title.png"/>
-</p>
+I wanted to be able to run the stable-diffusion openvino model on an AWS EC2 instance, so I dockerized it for higher portability.
 
-## Requirements
+To accomplish this, I had to modify the demo.py script from the orginal project to wait for prompt input from the user instead of exiting after a single run. This keeps the docker container in a running state, and allows the user to run the model multiple times without having to download the model each time.
 
-* Linux, Windows, MacOS
-* Python <= 3.9.0
-* CPU or GPU compatible with OpenVINO.
+## Usage
+You will need to provision an AWS EC2 instance with the following specs:
+- AWS AMI 2023
+- Instance type: c5.4xlarge
+- 32 GB of EBS storage
 
-## Install requirements
+Once the instance is provisioned, ssh into the instance and run the following commands:
+```
+sudo yum update -y
+sudo yum install -y docker
+sudo service docker start
+sudo usermod -a -G docker ec2-user
+```
+You will need to log out and log back in for the usermod command to take effect.
 
-* Set up and update PIP to the highest version
-* Install OpenVINO™ Development Tools 2022.3.0 release with PyPI
-* Download requirements
-
-```bash
-python -m pip install --upgrade pip
-pip install openvino-dev[onnx,pytorch]==2022.3.0
-pip install -r requirements.txt
+Next, you will need to clone this repo and build the docker image:
+```
+git clone
+cd dockerized_stable_diffusion.openvino
+docker build -t dockerized_stable_diffusion.openvino .
 ```
 
-## Generate image from text description
+Once the docker image is built, you can run the docker container with the following command:
+```
+docker run -it dockerized_stable_diffusion.openvino
+```
+This starts the docker container in interactive terminal mode.
 
-```bash
-usage: demo.py [-h] [--model MODEL] [--device DEVICE] [--seed SEED] [--beta-start BETA_START] [--beta-end BETA_END] [--beta-schedule BETA_SCHEDULE]
-               [--num-inference-steps NUM_INFERENCE_STEPS] [--guidance-scale GUIDANCE_SCALE] [--eta ETA] [--tokenizer TOKENIZER] [--prompt PROMPT] [--params-from PARAMS_FROM]
-               [--init-image INIT_IMAGE] [--strength STRENGTH] [--mask MASK] [--output OUTPUT]
+A command line text will appear asking you to enter the prompt for the image you want to generate.
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --model MODEL         model name
-  --device DEVICE       inference device [CPU, GPU]
-  --seed SEED           random seed for generating consistent images per prompt
-  --beta-start BETA_START
-                        LMSDiscreteScheduler::beta_start
-  --beta-end BETA_END   LMSDiscreteScheduler::beta_end
-  --beta-schedule BETA_SCHEDULE
-                        LMSDiscreteScheduler::beta_schedule
-  --num-inference-steps NUM_INFERENCE_STEPS
-                        num inference steps
-  --guidance-scale GUIDANCE_SCALE
-                        guidance scale
-  --eta ETA             eta
-  --tokenizer TOKENIZER
-                        tokenizer
-  --prompt PROMPT       prompt
-  --params-from PARAMS_FROM
-                        Extract parameters from a previously generated image.
-  --init-image INIT_IMAGE
-                        path to initial image
-  --strength STRENGTH   how strong the initial image should be noised [0.0, 1.0]
-  --mask MASK           mask of the region to inpaint on the initial image
-  --output OUTPUT       output image name
+After running, the image will be saved in the docker container. To save the image to your local machine, you will need to open a new terminal window and run the following command:
+```
+docker cp <container_id>:/output.png .
+```
+You can find the container_id by running the following command:
+```
+docker ps -a
+```
+The container_id will be the first column of the output.
+
+To get the image to your local machine, use scp:
+```
+scp -i <path_to_pem_file> ec2-user@<ec2_public_ip>:~/image.png .
 ```
 
-## Examples
+## References
 
-### Example Text-To-Image
-```bash
-python demo.py --prompt "Street-art painting of Emilia Clarke in style of Banksy, photorealism"
-```
+- [Stable Diffusion OpenVino](<https://github.com/bes-dev/stable_diffusion.openvino>)
 
-### Example Image-To-Image
-```bash
-python demo.py --prompt "Photo of Emilia Clarke with a bright red hair" --init-image ./data/input.png --strength 0.5
-```
-
-### Example Inpainting
-```bash
-python demo.py --prompt "Photo of Emilia Clarke with a bright red hair" --init-image ./data/input.png --mask ./data/mask.png --strength 0.5
-```
-
-## Performance
-
-| CPU                                                | Time per iter | Total time |
-|----------------------------------------------------|---------------|------------|
-| AMD Ryzen 7 4800H                                  | 4.8 s/it      | 2.58 min   |
-| AMD Ryzen Threadripper 1900X                       | 5.34 s/it     | 2.58 min   |
-| Intel(R) Core(TM) i7-4790K  @ 4.00GHz              | 10.1 s/it     | 5.39 min   |
-| Intel(R) Core(TM) i5-8279U                         | 7.4 s/it      | 3.59 min   |
-| Intel(R) Core(TM) i5-8569U @ 2.8GHz (MBP13-2019)   | 6.17 s/it     | 3.23 min   |
-| Intel(R) Core(TM) i7-1165G7 @ 2.80GHz              | 7.4 s/it      | 3.59 min   |
-| Intel(R) Core(TM) i7-11800H @ 2.30GHz (16 threads) | 2.9 s/it      | 1.54 min   |
-| Intel(R) Core(TM) i7-1280P @ 1.80GHz (6P/8E)       | 5.45 s/it     | 2.55 min   |
-| Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz           | 1 s/it        | 33 s       |
-| Intel Arc A770M                                    | 6.64 it/s     | 7.53 s     |
-
-
-## Acknowledgements
-
-* Original implementation of Stable Diffusion: https://github.com/CompVis/stable-diffusion
-* diffusers library: https://github.com/huggingface/diffusers
-
-## Disclaimer
-
-The authors are not responsible for the content generated using this project.
-Please, don't use this project to produce illegal, harmful, offensive etc. content.
