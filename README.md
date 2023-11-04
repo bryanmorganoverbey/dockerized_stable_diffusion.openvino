@@ -12,12 +12,13 @@ You will need to provision an AWS EC2 instance with the following specs:
 
 Once the instance is provisioned, ssh into the instance and run the following commands:
 ```
-sudo yum update -y
-sudo yum install -y docker
-sudo service docker start
-sudo usermod -a -G docker ec2-user
+sudo yum -y install git
+sudo dnf install docker
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+newgrp docker
 ```
-You will need to log out and log back in for the usermod command to take effect.
 
 Next, you will need to clone this repo and build the docker image:
 ```
